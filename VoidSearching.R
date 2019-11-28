@@ -1,7 +1,7 @@
 cat("\014")
 setwd("~/Desktop/ba")
 
-##Libraries-------------------------------------------
+## Libraries-------------------------------------------
 library(pracma)
 library(FNN)
 library(pracma)
