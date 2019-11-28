@@ -2,12 +2,18 @@ cat("\014")
 setwd("~/Desktop/ba")
 
 ## Libraries-------------------------------------------
-
 library(pracma)
 library(FNN)
 library(pracma)
 library(ggplot2)
 library(plotly)
+library(rlist)
+
+## Parameter-------------------------------------------
+cells_per_line <- 5
+# 1 : wrap around, 2: copy edge, 3
+filtermode <- 1
+
 
 
 ## Read CSV/data---------------------------------------
@@ -19,20 +25,31 @@ dataframe <- read.csv("data.txt", sep = ",",header = FALSE)
 header <- dataframe[1,][!is.na(dataframe[1,])]
 dataframe <- data.frame(dataframe[2:nrow(dataframe),])
 rownames(dataframe) <- seq(length = nrow(dataframe))
+dimension <- header[2]
+
+## Apply smoothening filter---------------------------------------------------------
+
+# 1. divide dataframe into cells----------------------------
+source("data_into_cell.R")
+
+# 2. seperate outer and inner indices
+source("seperate_inner_outer.R")
+
+# 3. calculate mean of inner cells
+
+
+# 4. calculate mean of outer cells according to parameter
+
 
 
 ## Prepare data for denisty calculation with kNN--------
 
 #for this calculatation we use the mean of dim*2 closest neighbors as the radius of the n dimensional sphere
-kNN_data <- get.knn(dataframe, k=header[2]*2, algorithm=c("kd_tree", "cover_tree", "CR", "brute"))
+kNN_data <- get.knn(dataframe, k=dimension*4, algorithm=c("kd_tree", "cover_tree", "CR", "brute"))
 kNN_neighbors <- data.frame(kNN_data[1])
 kNN_distance <- data.frame(kNN_data[2])
 kNN_mean_distance <- rowMeans(kNN_distance)
 
-
-## 3d density plot-------------------------------------- 
-p <- source("plot_3d_with_denisity.R")
-p
 
 
 ## Density group finding via "watershed/waterfilling"
@@ -71,9 +88,6 @@ repeat{
   }
 }
 
-## 3d subvoid-group plot--------------------------------------
-p <- source("plot_3d_with_groups.R")
-p
 
 
 # define what a void is---------------------------------------
@@ -84,20 +98,66 @@ cell_frame = unique(group_frame)
 data_per_cell = table(group_frame)
 density_per_radius = kNN_mean_distance[cell_frame] / data_per_cell
 
-void_index <- density_per_radius > mean(density_per_radius)
-void_cells <- strtoi(rownames(void_index[which(void_index == TRUE)]))
-data_cells <- strtoi(rownames(void_index[which(void_index == FALSE)]))
+#determin wether data is real data or void
+tmp_index <- density_per_radius > mean(density_per_radius)
+void_cells <- strtoi(rownames(tmp_index[which(tmp_index == TRUE)]))
+data_cells <- strtoi(rownames(tmp_index[which(tmp_index == FALSE)]))
 
 void_index <- which(group_frame %in% void_cells)
 data_index <- which(group_frame %in% data_cells)
 
-## 3d plot data frame with voids-------------------------------
+
+## combining voids --------------------------------------------------
+
+#create new dataframe which holds cell and the subvoids
+datalist = list()
+
+for (i in c(1:length(void_cells))){
+  # get index of each vell with its subvoids 
+  subvoid_index <- void_index[which(group_frame[void_index]  %in% void_cells[i])]
+  if(length(subvoid_index) != 0){
+  tmp <- dataframe[subvoid_index,]
+  # use mean as new coordinate
+  datalist[[i]] <- colMeans(tmp)
+  }else{
+    
+  }
+}
+
+subvoid_frame <- do.call(rbind, datalist)
+
+
+
+
+## plot block --------------------------------------------------------
+
+## slices ------------------------------------------------------------
+#take slice from the Y axis 
+p <- source("plot_3d_slice.R")
+p
+
+## 3d plot data frame with combined void -----------------------------
 p <- source("plot_3d_void.R")
 p
 
+## 3d plot data frame with voids cells-------------------------------
 
-# slices
+p <- source("plot_3d_void_cell.R")
+p
+
+## 3d subvoid-group plot--------------------------------------
+p <- source("plot_3d_with_groups.R")
+p
+
+## 3d density plot-------------------------------------- 
+p <- source("plot_3d_with_denisity.R")
+p
+
+## 3d data plot-------------------------------------- 
+p <- source("plot_3d_all_data.R")
+p
+
 # density field
-# combining voids
+
 
 
