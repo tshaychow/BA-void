@@ -1,34 +1,38 @@
+## Output
+# inner_indices 
+# outer_indices
+
 ## seperate indices into border and inner matrix indices-----------
 
-inner_indicies <- 2:(cells_per_line-1)
+inner_indices <- 2:(cells_per_line-1)
 
-# get border indicies---------------------------------------------
+# get border indices---------------------------------------------
 
-# first calculate inner indicies
+# first calculate inner indices
 
 inner_line <- cells_per_line -2
 
 if (dimension != 1){
   for (exponent in 1:(dimension-1)){
     
-    # get inner indicies first
+    # get inner indices first
     # jump from current dimension to next
-    inner_indicies <- inner_indicies + cells_per_line^(exponent)
+    inner_indices <- inner_indices + cells_per_line^(exponent)
     tmp <- list(NA) 
     
-    # add new dimension indicies 
+    # add new dimension indices 
     for (index in 1:inner_line){
-      tmp <- list(tmp,inner_indicies+cells_per_line^(exponent)*(index-1))
+      tmp <- list(tmp,inner_indices+cells_per_line^(exponent)*(index-1))
     }
     tmp <- unlist(tmp)
-    inner_indicies <- tmp[!is.na(tmp)]
+    inner_indices <- tmp[!is.na(tmp)]
   }
 }
 
-inner_indicies <- inner_indicies[!is.na(inner_indicies)]
-inner_indicies
+inner_indices <- inner_indices[!is.na(inner_indices)]
+inner_indices
 
-# second calculate outer border indicies
-indicies <- c(1:(cells_per_line^dimension))
-outer_indicies <- which(indicies %in% inner_indicies == FALSE) 
+# second calculate outer border indices
+indices <- c(1:(cells_per_line^dimension))
+outer_indices <- which(indices %in% inner_indices == FALSE) 
 

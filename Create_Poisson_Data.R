@@ -15,13 +15,8 @@ size_of_dim <- ceiling(nthroot(numbers_of_elements,dimension))
 for (i in 1:dimension){
   mydataframe[,i] <- runif(numbers_of_elements,0,1)
 }
-
-
 mydataframe <- data.frame(mydataframe)
 
-#plot
-p <- source("plot_3d_all_data.R")
-p
 
 ## Write into TXT
 write.table(list(numbers_of_elements, dimension),file = "data.txt",append=FALSE,row.names = FALSE,col.names = FALSE,sep = ",")
