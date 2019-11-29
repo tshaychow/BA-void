@@ -12,7 +12,7 @@ library(rlist)
 ## Const & Parameter-------------------------------------------------------------
 # 1 : wrap around, 2: copy edge, 3
 filtermode <- 1
-cells_per_line <- 5
+cells_per_line <- 3
 bool_plot <- FALSE
 
 
@@ -47,7 +47,7 @@ source("seperate_inner_outer.R")
 source("mean_inner_cells.R")
 
 # 4. calculate mean of outer cells according to parameter---
-
+source("tmp.R")
 
 
 ## Prepare data for kNN------------------------------------------------------------
