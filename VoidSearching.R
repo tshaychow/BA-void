@@ -12,7 +12,7 @@ library(rlist)
 ## Const & Parameter-------------------------------------------------------------
 # 1 : wrap around, 2: copy edge, 3
 filtermode <- 1
-cells_per_line <- 3
+cells_per_line <- 6
 bool_plot <- FALSE
 
 
@@ -47,15 +47,18 @@ source("seperate_inner_outer.R")
 source("mean_inner_cells.R")
 
 # 4. calculate mean of outer cells according to parameter---
-source("tmp.R")
-
+if (filtermode == 1){ 
+  source("mean_outer_cells_wrap.R")
+}else{
+  source("mean_outer_cells_copy.R")
+}
 
 ## Prepare data for kNN------------------------------------------------------------
 # kNN_mean_distance
 
 # for this calculatation we use the mean of dim*2 closest neighbors as the radius of the n dimensional sphere
 
-kNN_data <- get.knn(dataframe, k=dimension*4, algorithm=c("kd_tree", "cover_tree", "CR", "brute"))
+kNN_data <- get.knn(mean_data_cell_frame, k=dimension*2, algorithm=c("kd_tree", "cover_tree", "CR", "brute"))
 kNN_neighbors <- data.frame(kNN_data[1])
 kNN_distance <- data.frame(kNN_data[2])
 kNN_mean_distance <- rowMeans(kNN_distance)

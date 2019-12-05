@@ -2,7 +2,7 @@
 mean_data_cell_frame <- data_cell_frame
 
 # define a function to get all neighbours of inner indices
-inner_neighbour <- function(position) {
+outer_neighbour <- function(position) {
   next_neighbours <- position
   # first calculate inner indices
   for (dimension_index in 0:(dimension-1) ){
@@ -28,6 +28,8 @@ inner_neighbour <- function(position) {
     #look which case we have by checking base and tier values
     case_number_index <- list(NULL)
     base <- floor((next_neighbours-1)/ (cells_per_line))
+  
+    
     for (index in 1:length(tier)){
       # length(tier) is half of length(base), there that how we get each pair
       tmp_base <- c(base[index],base[index+(length(tier))])
@@ -42,6 +44,10 @@ inner_neighbour <- function(position) {
       case_number_index <- list(case_number_index,tmp_index)
     }
     case_number_index <- unlist(case_number_index)
+    
+    in_matrix <- 1:cells_per_line*(dimension_index+1)
+    cat(next_neighbours %in% in_matrix)
+    cat("\n")
     
     for (index in 1:length(tier)){
       tmp_value <- next_neighbours[case_number_index[index]]
@@ -65,6 +71,8 @@ inner_neighbour <- function(position) {
     }
     next_neighbours <- list(next_neighbours,last_list)
     next_neighbours <- unlist(next_neighbours)
+    cat(next_neighbours)
+    cat("\n")
   }
   return(next_neighbours)
 }

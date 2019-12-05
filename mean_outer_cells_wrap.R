@@ -40,15 +40,13 @@ outer_neighbour <- function(position) {
     }
     next_neighbours <- list(next_neighbours,last_list)
     next_neighbours <- unlist(next_neighbours)
-    cat(next_neighbours)
-    cat("\n")
   }
   return(next_neighbours)
 }
 
 for (index in 1:length(outer_indices)){
   tmp_index <- outer_indices[index]
-  tmp_mean <- data_cell_frame[outer_indices(tmp_index)]
+  tmp_mean <- data_cell_frame[outer_neighbour(tmp_index)]
   mean_data_cell_frame[tmp_index]<- (mean(tmp_mean))
 }
 

@@ -14,12 +14,12 @@ outer_neighbour <- function(position) {
     next_dim_shift <- cells_per_line^(dimension_index-1)
     next_neighbours <- list(next_neighbours-next_dim_shift, next_neighbours+next_dim_shift)
     next_neighbours <- unlist(next_neighbours)
-  
+    
     #look which case we have by checking base and tier values
     next_neighbours_tier <- floor((next_neighbours-1)/cells_per_line^dimension_index) 
     
     tmp_length <- length(last_list)
-
+    
     for (index in 1:tmp_length){
       actual_tier <- last_list_tier[index]
       
@@ -27,28 +27,26 @@ outer_neighbour <- function(position) {
       
       # 1. case left is out of frame realm
       if(tmp_tier[1] < actual_tier){
-      #calculate new position value 
-          tmp <- cells_per_line^(dimension_index) + next_neighbours[index]
-          next_neighbours[index] <- tmp
+        #calculate new position value 
+        tmp <- last_list[index]
+        next_neighbours[index] <- tmp
       }
       # 2. case left is out of frame realm
       if(tmp_tier[2] > actual_tier){
-          #calculate new position value
-          tmp <- next_neighbours[index+tmp_length] - cells_per_line^(dimension_index) 
-          next_neighbours[index+tmp_length] <- tmp
+        #calculate new position value
+        tmp <-last_list[index]
+        next_neighbours[index+tmp_length] <- tmp
       }
     }
     next_neighbours <- list(next_neighbours,last_list)
     next_neighbours <- unlist(next_neighbours)
-    cat(next_neighbours)
-    cat("\n")
   }
   return(next_neighbours)
 }
 
 for (index in 1:length(outer_indices)){
   tmp_index <- outer_indices[index]
-  tmp_mean <- data_cell_frame[outer_indices(tmp_index)]
+  tmp_mean <- data_cell_frame[outer_neighbour(tmp_index)]
   mean_data_cell_frame[tmp_index]<- (mean(tmp_mean))
 }
 
