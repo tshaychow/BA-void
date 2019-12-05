@@ -1,9 +1,9 @@
-group_frame <- c(seq(1:length(mean_data_cell_frame)))
+group_frame <- c(seq(1:length(dataframe)))
 number_of_groups <- length(unique(group_frame))
 
 repeat{
   
-  for (current_i in 1:length(mean_data_cell_frame)){
+  for (current_i in 1:length(dataframe)){
     current_node <- group_frame[current_i]
     # find current_nodes next possible greater radius node
     index <- which(kNN_mean_distance[c(kNN_neighbors[current_node,],recursive = TRUE)] %in% max(kNN_mean_distance[c(kNN_neighbors[current_node,],recursive = TRUE)]))
