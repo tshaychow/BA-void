@@ -2,18 +2,27 @@ cat("\014")
 setwd("~/Desktop/ba")
 
 ## Libraries---------------------------------------------------------------------
-library(pracma)
-library(FNN)
-library(pracma)
-library(ggplot2)
-library(plotly)
-library(rlist)
+library("pracma")
+library("FNN")
+library("pracma")
+library("ggplot2")
+library("plotly")
+library("rlist")
+
+
+library("parallel")
+library("MASS")
+library("foreach")
+library("iterators")
+library("doParallel")
+
 
 ## Const & Parameter-------------------------------------------------------------
 # 1 : wrap around, 2: copy edge, 3
 filtermode <- 1
 cells_per_line <- 4
 bool_plot <- FALSE
+const_alpha <- 0.1
 
 
 ## Read CSV/data------------------------------------------------------------------
@@ -35,31 +44,46 @@ dimension <- header[2]
 
 # 1. divide dataframe into cells----------------------------
 # data_cell_frame
-source("data_into_cell.R")
+
+system.time( 
+  source("multi_proc_data_into_cells.R")
+)
+
+system.time( 
+  source("single_proc_data_into_cells.R")
+)
+
+
+
+
 
 # 2. seperate outer and inner indices-----------------------
 # inner_indices 
 # outer_indices
+system.time(
 source("seperate_inner_outer.R")
-
+)
 # 3. calculate mean of inner cells--------------------------
 # mean_data_cell_frame
+system.time(
 source("mean_inner_cells.R")
-
+)
 # 4. calculate mean of outer cells according to parameter---
+system.time(
 if (filtermode == 1){ 
   source("mean_outer_cells_wrap.R")
 }else{
   source("mean_outer_cells_copy.R")
 }
-
+)
 
 ## Density group finding via "watershed/waterfilling" ----------------------------
 # group_frame
 
 # We go through all densities via the weightened kNN adjacency matrix
+system.time(
 source("new_watershed.R")
-
+)
 
 ## define what a void is----------------------------------------------------
 # void_index
@@ -73,7 +97,8 @@ density_per_radius = mean_data_cell_frame[cell_frame] / data_per_cell
 # determine whether data is real data or void
 # True = is real data
 # False = is void
-tmp_index <- density_per_radius > mean(density_per_radius)
+
+tmp_index <- density_per_radius > const_alpha * mean(density_per_radius)
 void_cells <- strtoi(names(tmp_index[which(tmp_index == FALSE)]))
 data_cells <- strtoi(names(tmp_index[which(tmp_index == TRUE)]))
 

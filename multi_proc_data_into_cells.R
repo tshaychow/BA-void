@@ -2,7 +2,7 @@ registerDoParallel(detectCores())
 
 
 ##output
-# data_cell_frame
+#data_cell_frame
 
 # divide dataframe into cells
 cellsize <- 1/cells_per_line
@@ -12,11 +12,31 @@ data_cell_frame <- array(dim = (rep(cells_per_line,dimension)))
 cell_dimension_counter <- array(rep(0,dimension),dimension)
 
 
-position_counter <- array(rep(0,dimension),dim = dimension)
 
-for (cell_index in 1:length(data_cell_frame)){
+
+
+modulo <- function(position){
+  a <- floor(position/cells_per_line)
+  b <- position %% cells_per_line
+  c(a,b)
+}
+
+
+test <- foreach(cell_index = 1:length(data_cell_frame)) %dopar% {
   cell_data <- list(NA)
+
+  # calculate position array from position value
+  position_counter <- array()
+  tmp <- cell_index-1
+  for (position_index in 1:dimension){
+    tmp <- modulo(tmp)
+    position_counter <- list(position_counter, tmp[2])
+    tmp <- tmp[1]
+  }
   
+  position_counter <- unlist(position_counter)
+  position_counter <- position_counter[which(!is.na(position_counter))]
+
   # check all dimensions of possible data points
   for (dimension_index in 1:dimension){
     # possible data points in cell
@@ -25,35 +45,17 @@ for (cell_index in 1:length(data_cell_frame)){
     cell_dimension_counter[dimension] <- (cell_dimension_counter[dimension] + 1) %% cells_per_line
   }
   
-  # get next dimension coordinates
-  cat(position_counter)
-  cat("\n")
-  pos_index <- 1
-  position_counter[pos_index] <- position_counter[pos_index] + 1
-
-  while (position_counter[pos_index] >= cells_per_line){
-    position_counter[pos_index] <- position_counter[pos_index] %% cells_per_line
-    if (position_counter[pos_index] != 0) {
-      break;
-    }
-
-    pos_index <- pos_index %% dimension
-    pos_index <- pos_index + 1
-    position_counter[pos_index] <- position_counter[pos_index] + 1
-  }
-  
   # reshape list for better computation
   cell_data <- unlist(cell_data)
-  # search for data which are in the cells
+  # Replace NA with 0
   data_index <- strtoi(names(which(table(cell_data) == dimension)))
-  # replace NA with density of each cell
   if (length(data_index) == 0){
     data_index <- 0
-    data_cell_frame[cell_index] <- 0
+    tmp <- 0
   }else{
-    data_cell_frame[cell_index] <- length(data_index)
+    tmp <- length(data_index)
   }
-  
+  tmp
 }
 
 
