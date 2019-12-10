@@ -67,7 +67,7 @@ repeat{
       # update belonging list
       max_index <- which(neighbour_density %in% max(neighbour_density))
       next_node <- current_neighbours[max_index]
-      group_frame[current_i] <- next_node[1]
+      group_frame[current_i] <- sort(next_node)[1]
     }else{
       next_node <- current_node
     }

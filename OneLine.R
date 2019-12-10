@@ -1,0 +1,298 @@
+cat("\014")
+setwd("~/Desktop/ba")
+
+## functions ---------------------------------------------------------
+# modulo that also saves left over value 
+modulo <- function(position){
+  a <- floor(position/const_cells_per_line)
+  b <- position %% const_cells_per_line
+  c(a,b)
+}
+
+
+neighbours <- function(position) {
+  next_neighbours <- position
+  # first calculate inner indices
+  for (dimension_index in 1:dimension ){
+    
+    # tmp save current list
+    last_list <- next_neighbours
+    last_list_tier <- floor((last_list-1)/const_cells_per_line^dimension_index) 
+    
+    # get left and right position
+    next_dim_shift <- const_cells_per_line^(dimension_index-1)
+    next_neighbours <- list(next_neighbours-next_dim_shift, next_neighbours+next_dim_shift)
+    next_neighbours <- unlist(next_neighbours)
+    
+    #look which case we have by checking base and tier values
+    next_neighbours_tier <- floor((next_neighbours-1)/const_cells_per_line^dimension_index) 
+    
+    tmp_length <- length(last_list)
+    
+    for (index in 1:tmp_length){
+      actual_tier <- last_list_tier[index]
+      
+      tmp_tier <- c(next_neighbours_tier[index],next_neighbours_tier[index+tmp_length])
+      
+      
+      # 1. case left is out of frame realm
+      if(tmp_tier[1] < actual_tier){
+        #calculate new position value 
+        tmp <- const_cells_per_line^(dimension_index) + next_neighbours[index]
+        next_neighbours[index] <- tmp
+      }
+      # 2. case left is out of frame realm
+      if(tmp_tier[2] > actual_tier){
+        #calculate new position value
+        
+        # wrapping
+        if(const_filtermode == 1){
+          tmp <- next_neighbours[index+tmp_length] - const_cells_per_line^(dimension_index) 
+          # copy edge
+        }else if(const_filtermode == 2){
+          tmp <-last_list[index]
+        }
+        next_neighbours[index+tmp_length] <- tmp
+      }
+    }
+    next_neighbours <- list(next_neighbours,last_list)
+    next_neighbours <- unlist(next_neighbours)
+  }
+  return(next_neighbours)
+}
+
+
+## Libraries---------------------------------------------------------------------
+library("pracma")
+library("ggplot2")
+library("plotly")
+library("rlist")
+library("foreach")
+library("iterators")
+library("doParallel")
+
+
+#for performance 
+library("profvis")
+
+
+
+## Const & Parameter-------------------------------------------------------------
+
+# 1 : wrap around, 2: copy edge
+const_filtermode <- 1
+const_cells_per_line <- 10
+const_bool_plot <- FALSE
+const_alpha <- 0.1
+
+# parallel processing
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+
+## Read CSV/data------------------------------------------------------------------
+
+# 1. Read CSV----------------------------------------------
+# dataframe
+dataframe <- read.csv("data.txt", sep = ",",header = FALSE)
+
+# 2. Formate dataframe by seperating header and data-------
+# header
+# dimension
+
+header <- dataframe[1,][!is.na(dataframe[1,])]
+dataframe <- data.frame(dataframe[2:nrow(dataframe),])
+rownames(dataframe) <- seq(length = nrow(dataframe))
+dimension <- header[2]
+
+
+## Apply smoothening filter--------------------------------------------------------
+
+# data_cell_frame
+# modulo function, neighbour
+
+#system.time(
+#  source("multi_proc_data_into_cells.R")
+#)
+
+#system.time( 
+#  source("single_proc_data_into_cells.R")
+#)
+
+
+# 3. divide dataframe into cells----------------------------
+
+cellsize <- 1/const_cells_per_line
+data_cell_frame <- array(dim = (rep(const_cells_per_line,dimension)))
+
+
+# 4. calculate densities for each cells---------------------
+
+cell_densities <- foreach(cell_index = 1:length(data_cell_frame),.combine = c) %dopar% {
+  
+  # calculate position array from position value
+  # 4 -> 0 1 0
+  
+  position_counter <- array(dim = dimension)
+  tmp <- cell_index-1
+  for (position_index in 1:dimension){
+    tmp <- modulo(tmp)
+    position_counter[position_index] <- tmp[2]
+    tmp <- tmp[1]
+  }
+  
+  # check all dimensions of possible data points
+  cell_data <- which((dataframe[1] >= (cellsize * position_counter[1]) & dataframe[1]  < cellsize*(position_counter[1]+1)) ==TRUE)
+  for (dimension_index in 2:dimension){
+    tmp_pc <- position_counter[dimension_index]
+    tmp_df <- dataframe[dimension_index]
+    # possible data points in cell
+    cell_data <- intersect(cell_data,which((tmp_df >= (cellsize * tmp_pc) & tmp_df < cellsize*(tmp_pc+1))))
+  }
+  
+  # Replace NA with 0
+  if (length(cell_data) == 0){
+    tmp <- 0
+  }else{
+    tmp <- length(cell_data)
+  }
+  tmp
+}
+
+# 5. restructure density into matrix format --------------------
+
+data_cell_frame <- array(cell_densities,dim = rep(const_cells_per_line,dimension))
+
+
+# 6. delete vars for better performance ------------------------
+
+remove(list = c("cell_densities","modulo","cellsize","dataframe"))
+
+
+# 7. apply mean filter to cells --------------------------------
+#system.time(
+#  source("mean_data.R")
+#)
+
+mean_data<- foreach(index = 1:length(data_cell_frame)) %dopar% {
+  output <- mean(data_cell_frame[neighbours(index)])
+}
+data_cell_frame <- array(unlist(mean_data),dim = rep(const_cells_per_line,dimension))
+
+
+# 8. stop cluster and delete vars for performance --------------
+
+stopCluster(cl)
+remove("mean_data")
+
+
+# 10. Density group finding via "watershed/waterfilling" ----------------------------
+# group_frame
+#system.time(
+#  source("new_watershed.R")
+#)
+
+
+group_frame <- c(seq(1:length(data_cell_frame)))
+number_of_groups <- length(unique(group_frame))
+
+repeat{
+  
+  for (current_i in 1:length(data_cell_frame)){
+    current_node <- group_frame[current_i]
+    
+    # find current_nodes next possible greater radius node
+    current_density <- data_cell_frame[current_node]
+    current_neighbours <- neighbours(current_node)
+    current_neighbours <- unique(current_neighbours)
+    current_neighbours <- unlist(current_neighbours)
+    neighbour_density <- data_cell_frame[current_neighbours] 
+    
+    # check whether lowest denisty neighbor is lower than the point itself
+    if (current_density < max(data_cell_frame) ) {
+      # update belonging list
+      max_index <- which(neighbour_density %in% max(neighbour_density))
+      next_node <- current_neighbours[max_index]
+      group_frame[current_i] <- sort(next_node)[1]
+    }else{
+      next_node <- current_node
+    }
+    
+    cat("index: ",current_i,"current node: ",current_node, data_cell_frame[current_node], " ",next_node,data_cell_frame[next_node]
+        ," | note: ", group_frame[current_i] ,"\n")
+  }
+  cat("\n")
+  
+  # If no new groups can be formed, we will break out of the loop
+  tmp_groups <- number_of_groups
+  number_of_groups <- length(unique(group_frame))
+  
+  if(number_of_groups ==  tmp_groups){
+    break
+  }
+}
+
+remove("number_of_groups","tmp_groups","next_node","neighbour_density","current_neighbours","current_density","max_index","current_node")
+
+# 11. define what a void is----------------------------------------------------
+# void_index
+# data_index
+
+# if the density in a subvoid is less then the average, subvoid will be declared as a not void
+cell_frame = unique(group_frame)
+data_per_cell = table(group_frame)
+density_per_radius = data_cell_frame[cell_frame] / data_per_cell
+
+# determine whether data is real data or void
+# True = is real data
+# False = is void
+
+tmp_index <- density_per_radius > const_alpha * mean(density_per_radius)
+void_cells <- strtoi(names(tmp_index[which(tmp_index == FALSE)]))
+data_cells <- strtoi(names(tmp_index[which(tmp_index == TRUE)]))
+
+# 12. combining voids -----------------------------------------------------
+void_index <- which(group_frame %in% void_cells)
+data_index <- which(group_frame %in% data_cells)
+
+
+
+
+## plot block ----------------------------------------------------------
+
+p <-source("new_plot/plot3d_heatmap.R")
+p
+
+
+# old plots
+if (const_bool_plot == TRUE){
+  ## slices ------------------------------------------------------------
+  #take slice from the Y axis 
+  p <- source("old_plot/plot_3d_slice.R")
+  p
+  
+  ## 3d plot data frame with combined void -----------------------------
+  p <- source("old_plot/plot_3d_void.R")
+  p
+  
+  ## 3d plot data frame with voids cells-------------------------------
+  
+  p <- source("old_plot/plot_3d_void_cell.R")
+  p
+  
+  ## 3d subvoid-group plot---------------------------------------------
+  p <- source("old_plot/plot_3d_with_groups.R")
+  p
+  
+  ## 3d density plot---------------------------------------------------
+  p <- source("old_plot/plot_3d_with_denisity.R")
+  p
+  
+  ## 3d data plot-----------------------------------------------------
+  p <- source("old_plot/plot_3d_all_data.R")
+  p
+}
+
+
+
+

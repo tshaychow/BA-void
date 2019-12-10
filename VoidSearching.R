@@ -22,7 +22,7 @@ library("profvis")
 ## Const & Parameter-------------------------------------------------------------
 # 1 : wrap around, 2: copy edge
 const_filtermode <- 1
-const_cells_per_line <- 6
+const_cells_per_line <- 10
 const_bool_plot <- FALSE
 const_alpha <- 0.1
 
@@ -68,7 +68,7 @@ source("multi_proc_data_into_cells.R")
 #  source("single_proc_data_into_cells.R")
 #)
 
-stopCluster(cl)
+
 remove(list = c("test","modulo","cellsize","dataframe"))
 
 # 2. calculate mean of outer cells according to parameter---
@@ -76,7 +76,7 @@ remove(list = c("test","modulo","cellsize","dataframe"))
 system.time(
   source("mean_data.R")
 )
-
+stopCluster(cl)
 remove("tmp","neighbours")
 
 ## Density group finding via "watershed/waterfilling" ----------------------------
