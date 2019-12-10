@@ -1,7 +1,7 @@
 
 
-# define a function to get all neighbours
-neighbours <- function(position) {
+# define a function to get all neighbours of inner indices
+outer_neighbour <- function(position) {
   next_neighbours <- position
   # first calculate inner indices
   for (dimension_index in 1:dimension ){
@@ -41,48 +41,12 @@ neighbours <- function(position) {
     next_neighbours <- list(next_neighbours,last_list)
     next_neighbours <- unlist(next_neighbours)
   }
-  next_neighbours <- unique(next_neighbours)
-  next_neighbours <- unlist(next_neighbours)
   return(next_neighbours)
 }
 
-
-
-
-group_frame <- c(seq(1:length(data_cell_frame)))
-number_of_groups <- length(unique(group_frame))
-
-repeat{
-  
-  for (current_i in 1:length(data_cell_frame)){
-    current_node <- group_frame[current_i]
-    
-    # find current_nodes next possible greater radius node
-    current_density <- data_cell_frame[current_node]
-    current_neighbours <- neighbours(current_node)
-    neighbour_density <- data_cell_frame[current_neighbours] 
-    
-    # check whether lowest denisty neighbor is lower than the point itself
-    if (current_density < max(data_cell_frame) ) {
-      # update belonging list
-      max_index <- which(neighbour_density %in% max(neighbour_density))
-      next_node <- current_neighbours[max_index]
-      group_frame[current_i] <- next_node[1]
-    }else{
-      next_node <- current_node
-    }
-    
-
-    cat("index: ",current_i,"current node: ",current_node, data_cell_frame[current_node], " ",next_node,data_cell_frame[next_node]
-        ," | note: ", group_frame[current_i] ,"\n")
-  }
-  cat("\n")
-  
-  # If no new groups can be formed, we will break out of the loop
-  tmp_groups <- number_of_groups
-  number_of_groups <- length(unique(group_frame))
-  
-  if(number_of_groups ==  tmp_groups){
-    break
-  }
+for (index in 1:length(outer_indices)){
+  tmp_index <- outer_indices[index]
+  tmp_mean <- data_cell_frame[outer_neighbour(tmp_index)]
+  mean_data_cell_frame[tmp_index]<- (mean(tmp_mean))
 }
+

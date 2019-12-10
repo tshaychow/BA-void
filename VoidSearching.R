@@ -8,21 +8,27 @@ library("pracma")
 library("ggplot2")
 library("plotly")
 library("rlist")
-
-
 library("parallel")
 library("MASS")
 library("foreach")
 library("iterators")
 library("doParallel")
+library("bigstatsr")
+
+library("profvis")
+
 
 
 ## Const & Parameter-------------------------------------------------------------
-# 1 : wrap around, 2: copy edge, 3
-filtermode <- 1
-cells_per_line <- 4
-bool_plot <- FALSE
+# 1 : wrap around, 2: copy edge
+const_filtermode <- 1
+const_cells_per_line <- 6
+const_bool_plot <- FALSE
 const_alpha <- 0.1
+
+# parallel processing
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
 
 
 ## Read CSV/data------------------------------------------------------------------
@@ -40,42 +46,38 @@ dataframe <- data.frame(dataframe[2:nrow(dataframe),])
 rownames(dataframe) <- seq(length = nrow(dataframe))
 dimension <- header[2]
 
+
+
+## 3d data plot-------------------------------------- 
+if(const_bool_plot == TRUE){
+  p <- source("old_plot/plot_3d_all_data.R")
+  p
+}
+
+
 ## Apply smoothening filter--------------------------------------------------------
 
 # 1. divide dataframe into cells----------------------------
 # data_cell_frame
 
-system.time( 
-  source("multi_proc_data_into_cells.R")
-)
-
-system.time( 
-  source("single_proc_data_into_cells.R")
-)
-
-
-
-
-
-# 2. seperate outer and inner indices-----------------------
-# inner_indices 
-# outer_indices
 system.time(
-source("seperate_inner_outer.R")
+source("multi_proc_data_into_cells.R")
 )
-# 3. calculate mean of inner cells--------------------------
-# mean_data_cell_frame
+
+#system.time( 
+#  source("single_proc_data_into_cells.R")
+#)
+
+stopCluster(cl)
+remove(list = c("test","modulo","cellsize","dataframe"))
+
+# 2. calculate mean of outer cells according to parameter---
+# data_cell_frame now has 
 system.time(
-source("mean_inner_cells.R")
+  source("mean_data.R")
 )
-# 4. calculate mean of outer cells according to parameter---
-system.time(
-if (filtermode == 1){ 
-  source("mean_outer_cells_wrap.R")
-}else{
-  source("mean_outer_cells_copy.R")
-}
-)
+
+remove("tmp","neighbours")
 
 ## Density group finding via "watershed/waterfilling" ----------------------------
 # group_frame
@@ -116,7 +118,7 @@ p
 
 
 # old plots
-if (bool_plot){
+if (const_bool_plot == TRUE){
 ## slices ------------------------------------------------------------
 #take slice from the Y axis 
 p <- source("old_plot/plot_3d_slice.R")
@@ -138,11 +140,8 @@ p
 ## 3d density plot---------------------------------------------------
 p <- source("old_plot/plot_3d_with_denisity.R")
 p
-
-## 3d data plot-------------------------------------- 
-p <- source("old_plot/plot_3d_all_data.R")
-p
 }
+
 
 
 

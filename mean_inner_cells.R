@@ -7,7 +7,7 @@ inner_neighbour <- function(position) {
   # first calculate inner indices
   for (dimension_index in 0:(dimension-1) ){
     # get left and right neighbours
-    next_dim_shift <- cells_per_line^dimension_index
+    next_dim_shift <- const_cells_per_line^dimension_index
     tmp <- list(tmp-next_dim_shift, tmp, tmp+next_dim_shift)
     tmp <- unlist(tmp)
     

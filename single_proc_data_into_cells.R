@@ -2,8 +2,8 @@
 # data_cell_frame
 
 # divide dataframe into cells
-cellsize <- 1/cells_per_line
-data_cell_frame <- array(dim = (rep(cells_per_line,dimension)))
+cellsize <- 1/const_cells_per_line
+data_cell_frame <- array(dim = (rep(const_cells_per_line,dimension)))
 
 # fill data_cell_frame with amount of points in each cell
 cell_dimension_counter <- array(rep(0,dimension),dimension)
@@ -20,15 +20,15 @@ for (cell_index in 1:length(data_cell_frame)){
     cell_data <- list(cell_data,which(dataframe[dimension_index] >= cellsize* position_counter[dimension_index] & dataframe[dimension_index]  < cellsize*(position_counter[dimension_index] +1)))
     
     # getnext coordinates
-    cell_dimension_counter[dimension] <- (cell_dimension_counter[dimension] + 1) %% cells_per_line
+    cell_dimension_counter[dimension] <- (cell_dimension_counter[dimension] + 1) %% const_cells_per_line
   }
   
   # get next dimension coordinates
   pos_index <- 1
   position_counter[pos_index] <- position_counter[pos_index] + 1
   
-  while (position_counter[pos_index] >= cells_per_line){
-    position_counter[pos_index] <- position_counter[pos_index] %% cells_per_line
+  while (position_counter[pos_index] >= const_cells_per_line){
+    position_counter[pos_index] <- position_counter[pos_index] %% const_cells_per_line
     if (position_counter[pos_index] != 0) {
       break;
     }

@@ -1,59 +1,47 @@
-registerDoParallel(detectCores())
-
-
-##output
-# data_cell_frame
 
 # divide dataframe into cells
-cellsize <- 1/cells_per_line
-data_cell_frame <- array(dim = (rep(cells_per_line,dimension)))
-
-# fill data_cell_frame with amount of points in each cell
-cell_dimension_counter <- array(rep(0,dimension),dimension)
+cellsize <- 1/const_cells_per_line
+data_cell_frame <- array(dim = (rep(const_cells_per_line,dimension)))
 
 
-position_counter <- array(rep(0,dimension),dim = dimension)
-
-for (cell_index in 1:length(data_cell_frame)){
-  cell_data <- list(NA)
-  
-  # check all dimensions of possible data points
-  for (dimension_index in 1:dimension){
-    # possible data points in cell
-    cell_data <- list(cell_data,which(dataframe[dimension_index] >= cellsize * position_counter[dimension_index] & dataframe[dimension_index]  < cellsize*(position_counter[dimension_index] +1)))
-    # get next coordinates
-    cell_dimension_counter[dimension] <- (cell_dimension_counter[dimension] + 1) %% cells_per_line
-  }
-  
-  # get next dimension coordinates
-  cat(position_counter)
-  cat("\n")
-  pos_index <- 1
-  position_counter[pos_index] <- position_counter[pos_index] + 1
-
-  while (position_counter[pos_index] >= cells_per_line){
-    position_counter[pos_index] <- position_counter[pos_index] %% cells_per_line
-    if (position_counter[pos_index] != 0) {
-      break;
-    }
-
-    pos_index <- pos_index %% dimension
-    pos_index <- pos_index + 1
-    position_counter[pos_index] <- position_counter[pos_index] + 1
-  }
-  
-  # reshape list for better computation
-  cell_data <- unlist(cell_data)
-  # search for data which are in the cells
-  data_index <- strtoi(names(which(table(cell_data) == dimension)))
-  # replace NA with density of each cell
-  if (length(data_index) == 0){
-    data_index <- 0
-    data_cell_frame[cell_index] <- 0
-  }else{
-    data_cell_frame[cell_index] <- length(data_index)
-  }
-  
+# modulo that also saves left over value 
+modulo <- function(position){
+  a <- floor(position/const_cells_per_line)
+  b <- position %% const_cells_per_line
+  c(a,b)
 }
 
+
+test <- foreach (cell_index = 1:length(data_cell_frame),.combine='rbind',.packages="foreach") %dopar% {
+  
+  # calculate position array from position value
+  # 4 -> 0 1 0
+  
+  position_counter <- array(dim = dimension)
+  tmp <- cell_index-1
+  for (position_index in 1:dimension){
+    tmp <- modulo(tmp)
+    position_counter[position_index] <- tmp[2]
+    tmp <- tmp[1]
+  }
+  
+  # check all dimensions of possible data points
+   result <- foreach (dimension_index = 1:dimension, .combine = "c") %do% {
+    tmp_pc <- position_counter[dimension_index]
+    tmp_df <- dataframe[dimension_index]
+    # possible data points in cell
+    which((tmp_df >= (cellsize * tmp_pc) & tmp_df < cellsize*(tmp_pc+1)))
+   }
+   cell_data <- Reduce(intersect,result)
+   
+  # Replace NA with 0
+   if (length(cell_data) == 0){
+     tmp <- 0
+   }else{
+     tmp <- length(cell_data)
+   }
+   tmp
+}
+
+data_cell_frame <- array(test,dim = rep(const_cells_per_line,dimension))
 

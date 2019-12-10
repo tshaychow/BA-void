@@ -8,15 +8,15 @@ outer_neighbour <- function(position) {
     
     # tmp save current list
     last_list <- next_neighbours
-    last_list_tier <- floor((last_list-1)/cells_per_line^dimension_index) 
+    last_list_tier <- floor((last_list-1)/const_cells_per_line^dimension_index) 
     
     # get left and right position
-    next_dim_shift <- cells_per_line^(dimension_index-1)
+    next_dim_shift <- const_cells_per_line^(dimension_index-1)
     next_neighbours <- list(next_neighbours-next_dim_shift, next_neighbours+next_dim_shift)
     next_neighbours <- unlist(next_neighbours)
   
     #look which case we have by checking base and tier values
-    next_neighbours_tier <- floor((next_neighbours-1)/cells_per_line^dimension_index) 
+    next_neighbours_tier <- floor((next_neighbours-1)/const_cells_per_line^dimension_index) 
     
     tmp_length <- length(last_list)
 
@@ -28,13 +28,13 @@ outer_neighbour <- function(position) {
       # 1. case left is out of frame realm
       if(tmp_tier[1] < actual_tier){
       #calculate new position value 
-          tmp <- cells_per_line^(dimension_index) + next_neighbours[index]
+          tmp <- const_cells_per_line^(dimension_index) + next_neighbours[index]
           next_neighbours[index] <- tmp
       }
       # 2. case left is out of frame realm
       if(tmp_tier[2] > actual_tier){
           #calculate new position value
-          tmp <- next_neighbours[index+tmp_length] - cells_per_line^(dimension_index) 
+          tmp <- next_neighbours[index+tmp_length] - const_cells_per_line^(dimension_index) 
           next_neighbours[index+tmp_length] <- tmp
       }
     }
