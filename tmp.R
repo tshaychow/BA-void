@@ -1,47 +1,38 @@
 
-# divide dataframe into cells
-cellsize <- 1/const_cells_per_line
-data_cell_frame <- array(dim = (rep(const_cells_per_line,dimension)))
+group_frame <- c(seq(1:length(data_cell_frame[,,1])))
+number_of_groups <- length(unique(group_frame))
+dimension <- 2
 
-
-# modulo that also saves left over value 
-modulo <- function(position){
-  a <- floor(position/const_cells_per_line)
-  b <- position %% const_cells_per_line
-  c(a,b)
-}
-
-
-test <- foreach (cell_index = 1:length(data_cell_frame),.combine='rbind',.packages="foreach") %dopar% {
-  
-  # calculate position array from position value
-  # 4 -> 0 1 0
-  
-  position_counter <- array(dim = dimension)
-  tmp <- cell_index-1
-  for (position_index in 1:dimension){
-    tmp <- modulo(tmp)
-    position_counter[position_index] <- tmp[2]
-    tmp <- tmp[1]
+repeat{
+  for (current_i in 1:100){
+    current_node <- group_frame[current_i]
+    
+    # find current_nodes next possible greater radius node
+    current_density <- data_cell_frame[current_node]
+    current_neighbours <- neighbours(current_node)
+    current_neighbours <- unique(current_neighbours)
+    current_neighbours <- unlist(current_neighbours)
+    neighbour_density <- data_cell_frame[current_neighbours] 
+    
+    # check whether lowest denisty neighbor is lower than the point itself
+    if (current_density < max(neighbour_density) ) {
+      # update belonging list
+      max_index <- which(neighbour_density %in% max(neighbour_density))
+      next_node <- current_neighbours[max_index]
+      group_frame[current_i] <- sort(next_node)[1]
+    }else{
+      next_node <- current_node
+    }
+    
+    cat("index: ",current_i,"current node: ",current_node, data_cell_frame[current_node], " ",next_node,data_cell_frame[next_node]," | note: ", group_frame[current_i] ,"\n")
   }
+  cat("\n")
   
-  # check all dimensions of possible data points
-   result <- foreach (dimension_index = 1:dimension, .combine = "c") %do% {
-    tmp_pc <- position_counter[dimension_index]
-    tmp_df <- dataframe[dimension_index]
-    # possible data points in cell
-    which((tmp_df >= (cellsize * tmp_pc) & tmp_df < cellsize*(tmp_pc+1)))
-   }
-   cell_data <- Reduce(intersect,result)
-   
-  # Replace NA with 0
-   if (length(cell_data) == 0){
-     tmp <- 0
-   }else{
-     tmp <- length(cell_data)
-   }
-   tmp
+  # If no new groups can be formed, we will break out of the loop
+  tmp_groups <- number_of_groups
+  number_of_groups <- length(unique(group_frame))
+  
+  if(number_of_groups ==  tmp_groups){
+    break
+  }
 }
-
-data_cell_frame <- array(test,dim = rep(const_cells_per_line,dimension))
-

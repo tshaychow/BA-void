@@ -47,8 +47,6 @@ neighbours <- function(position) {
 }
 
 
-
-
 group_frame <- c(seq(1:length(data_cell_frame)))
 number_of_groups <- length(unique(group_frame))
 
