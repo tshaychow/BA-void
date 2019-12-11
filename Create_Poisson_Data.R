@@ -1,11 +1,12 @@
 library(pracma)
+library(ggplot2)
 library(plotly)
 
 
 #const
 setwd("~/Desktop/ba")
 dimension = 3
-numbers_of_elements = 100000
+numbers_of_elements = 10000
 
 #init data frames
 mydataframe <- data.frame(matrix(0,nrow= numbers_of_elements,ncol = dimension))

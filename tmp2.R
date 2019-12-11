@@ -36,6 +36,7 @@ neighbours <- function(position) {
       if(tmp_tier[1] < actual_tier){
         #calculate new position value 
         
+        # wrapping
         if(const_filtermode == 1){
           tmp <- const_cells_per_line^(dimension_index) + next_neighbours[index]
           # copy edge
@@ -88,7 +89,7 @@ library("profvis")
 const_filtermode <- 1
 const_cells_per_line <- 10
 const_bool_plot <- FALSE
-const_alpha <- 0.5
+const_alpha <- 0.20
 
 # parallel processing
 cl <- makeCluster(detectCores())
@@ -170,7 +171,7 @@ data_cell_frame <- array(cell_densities,dim = rep(const_cells_per_line,dimension
 
 # 6. delete vars for better performance ------------------------
 
-remove(list = c("cell_densities","modulo","cellsize","dataframe"))
+#remove(list = c("cell_densities","modulo","cellsize","dataframe"))
 
 
 # 7. apply mean filter to cells --------------------------------
@@ -186,7 +187,7 @@ data_cell_frame <- array(unlist(mean_data),dim = rep(const_cells_per_line,dimens
 
 # 8. stop cluster and delete vars for performance --------------
 
-remove("mean_data")
+#remove("mean_data")
 
 
 # 10. Density group finding via "watershed/waterfilling" ----------------------------
@@ -196,6 +197,10 @@ remove("mean_data")
 #)
 
 
+group_frame <- c(seq(1:length(data_cell_frame)))
+number_of_groups <- length(unique(group_frame))
+#change filter mode to copy edge, so we just consider actual neighbours
+const_filtermode <- 2
 
 group_frame <- c(seq(1:length(data_cell_frame)))
 number_of_groups <- length(unique(group_frame))
@@ -236,10 +241,9 @@ repeat{
   }
 }
 
-
 stopCluster(cl)
 
-remove("number_of_groups","tmp_groups","next_node","neighbour_density","current_neighbours","current_density","max_index","current_node")
+#remove("number_of_groups","tmp_groups","next_node","neighbour_density","current_neighbours","current_density","max_index","current_node")
 
 # 11. define what a void is----------------------------------------------------
 # void_index
@@ -264,10 +268,15 @@ void_index <- which(group_frame %in% void_cells)
 data_index <- which(group_frame %in% data_cells)
 
 
-remove("tmp_index","density_per_radius","data_per_cell","cell_frame")
+#remove("tmp_index","density_per_radius","data_per_cell","cell_frame")
 
 ## plot block ----------------------------------------------------------
 
 p <-source("Untitled2.R")
 p
+#p <-source("new_plot/plot_3d_void.R")
+#p
+
+##remove("tmp_data_frame","p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p")
+##remove("w1","w2","w3","w4","w5","w6","w7","w8","w9","w10")
 

@@ -35,10 +35,17 @@ neighbours <- function(position) {
       # 1. case left is out of frame realm
       if(tmp_tier[1] < actual_tier){
         #calculate new position value 
-        tmp <- const_cells_per_line^(dimension_index) + next_neighbours[index]
+        
+        # wrapping
+        if(const_filtermode == 1){
+          tmp <- const_cells_per_line^(dimension_index) + next_neighbours[index]
+          # copy edge
+        }else if(const_filtermode == 2){
+          tmp <-neighbour_list[index]
+        }
         next_neighbours[index] <- tmp
       }
-      # 2. case left is out of frame realm
+      # 2. case right is out of frame realm
       if(tmp_tier[2] > actual_tier){
         #calculate new position value
         
@@ -71,18 +78,18 @@ library("iterators")
 library("doParallel")
 
 
-#for performance 
+#for performance analysis
 library("profvis")
 
 
 
 ## Const & Parameter-------------------------------------------------------------
-
+profvis({
 # 1 : wrap around, 2: copy edge
 const_filtermode <- 1
-const_cells_per_line <- 10
+const_cells_per_line <- 30
 const_bool_plot <- FALSE
-const_alpha <- 0.20
+const_alpha <- 0.2
 
 # parallel processing
 cl <- makeCluster(detectCores())
@@ -180,7 +187,6 @@ data_cell_frame <- array(unlist(mean_data),dim = rep(const_cells_per_line,dimens
 
 # 8. stop cluster and delete vars for performance --------------
 
-stopCluster(cl)
 remove("mean_data")
 
 
@@ -193,10 +199,12 @@ remove("mean_data")
 
 group_frame <- c(seq(1:length(data_cell_frame)))
 number_of_groups <- length(unique(group_frame))
+#change filter mode to copy edge, so we just consider actual neighbours
+const_filtermode <- 2
 
 repeat{
-  for (current_i in 1:length(data_cell_frame)){
-    current_node <- group_frame[current_i]
+  for (index in 1:length(data_cell_frame)){
+    current_node <- unlist(group_frame[index])
     
     # find current_nodes next possible greater radius node
     current_density <- data_cell_frame[current_node]
@@ -210,14 +218,15 @@ repeat{
       # update belonging list
       max_index <- which(neighbour_density %in% max(neighbour_density))
       next_node <- current_neighbours[max_index]
-      group_frame[current_i] <- sort(next_node,decreasing = TRUE)[1]
+      group_frame[index] <- next_node
     }else{
       next_node <- current_node
+      group_frame[index] <- next_node
     }
     
-    cat("index: ",current_i,"current node: ",current_node, data_cell_frame[current_node], " ",next_node,data_cell_frame[next_node]," | note: ", group_frame[current_i] ,"\n")
+    #cat("index: ",index,"current node: ",current_node, data_cell_frame[current_node], " ",next_node,data_cell_frame[next_node]," | note: ", group_frame[index] ,"\n")
   }
-  cat("\n")
+  #cat("\n")
   
   # If no new groups can be formed, we will break out of the loop
   tmp_groups <- number_of_groups
@@ -227,6 +236,8 @@ repeat{
     break
   }
 }
+
+stopCluster(cl)
 
 remove("number_of_groups","tmp_groups","next_node","neighbour_density","current_neighbours","current_density","max_index","current_node")
 
@@ -257,9 +268,19 @@ remove("tmp_index","density_per_radius","data_per_cell","cell_frame")
 
 ## plot block ----------------------------------------------------------
 
+if (dimension == 2){
+# white is void
+# black is data
+a1 <-source("plot_2d_void_groups.R")
+a2 <-source("plot_2d_void_data.R")
+p <- subplot(p1,w1,p2,w2,nrows = 2)
+p
+}else if(dimension == 3){
 p <-source("new_plot/plot_3d_void.R")
 p
+}
+
 
 remove("tmp_data_frame","p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p")
 remove("w1","w2","w3","w4","w5","w6","w7","w8","w9","w10")
-
+})
